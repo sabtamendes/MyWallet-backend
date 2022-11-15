@@ -14,26 +14,29 @@ server.use(express.json());
 
 const mongo = new MongoClient(process.env.MONGO_URI);
 let db;
-let info;
+let users;
+let session;
 
-mongo.connect().then(()=>{
+mongo.connect().then(() => {
     db = mongo.db("mywallet");
-    info = db.collection("users");
-})
+    users = db.collection("users");
+    session = db.collection("session");
+});
 
 
 const usersSchema = joi.object({
     name: joi.string().min(3).required(),
     email: joi.string().email().required(),
     password: joi.string().min(5).required()
-})
+});
 
 
 server.post("/sign-up", async (req, res) => {
+
     const user = req.body;
 
     try {
-        const emailIsAllreadyInUse = await info.findOne({ email: user.email });
+        const emailIsAllreadyInUse = await users.findOne({ email: user.email });
 
         if (emailIsAllreadyInUse) {
             return res.status(409).send({ message: "Email já está em uso!" });
@@ -55,7 +58,40 @@ server.post("/sign-up", async (req, res) => {
     } catch (error) {
         res.status(500).send(error);
     }
-})
+});
+
+server.post("/sign-in", async (req, res) => {
+    const { email, password } = req.body;
+
+    const token = uuidV4();
+
+    try {
+        const userHasAnAccount = await users.findOne({ email });
+
+        if (!userHasAnAccount) {
+            return res.sendStatus(401);
+        }
+
+        const validPassword = bcrypt.compareSync(password, userHasAnAccount.password);
+
+        if (!validPassword) {
+            return res.sendStatus(401);
+        }
+
+        const isInAsession = await session.findOne({ userId: userHasAnAccount._id });
+
+        if (isInAsession) {
+            return res.status(401).send({ message: "Sua conta já está logada, tente novamente!" });
+        }
+
+        await session.insertOne({ token, userId: userHasAnAccount._id });
+
+        res.send({ token });
+
+    } catch (error) {
+        res.status(500).send(error);
+    }
+});
 
 server.listen(process.env.PORT, () => {
     console.log("Listening on port " + process.env.PORT)
