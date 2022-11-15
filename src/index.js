@@ -1,5 +1,5 @@
 import express from "express";
-import { MongoClient, ObjectId } from "mongodb";
+import { MongoClient } from "mongodb";
 import cors from "cors";
 import dotenv from "dotenv";
 import joi from "joi";
@@ -69,7 +69,7 @@ server.post("/sign-in", async (req, res) => {
         const userHasAnAccount = await users.findOne({ email });
 
         if (!userHasAnAccount) {
-            return res.status(401).send({message: "Usuário não existe"});
+            return res.status(401).send({ message: "Usuário não existe" });
         }
 
         const validPassword = bcrypt.compareSync(password, userHasAnAccount.password);
@@ -104,6 +104,32 @@ server.post("/sign-out", async (req, res) => {
         await session.deleteOne({ token });
         res.sendStatus(200);
 
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
+});
+server.get("/data", async (req, res) => {
+    const transactions = [
+        { value: 100, description: "dinheiro da passage" }
+    ]
+    const { authorization } = req.headers;
+
+    const token = authorization?.replace("Bearer ", "");
+    if (!token) {
+        return res.sendStatus(401);
+    }
+
+    try {
+        const userSession = await session.findOne({ token });
+        const userConection = await users.findOne({ _id: userSession?.userId });
+        if (!userConection) {
+            return res.sendStatus(401);
+
+        }
+        delete userConection.password;
+
+
+        res.send({ userConection, transactions })
     } catch (error) {
         res.status(500).send(error.message);
     }
