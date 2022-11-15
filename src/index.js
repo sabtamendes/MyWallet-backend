@@ -1,5 +1,5 @@
 import express from "express";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import cors from "cors";
 import dotenv from "dotenv";
 import joi from "joi";
@@ -16,11 +16,12 @@ const mongo = new MongoClient(process.env.MONGO_URI);
 let db;
 let users;
 let session;
-
+let data;
 mongo.connect().then(() => {
     db = mongo.db("mywallet");
     users = db.collection("users");
     session = db.collection("session");
+    data = db.collection("data");
 });
 
 
@@ -34,7 +35,6 @@ const usersSchema = joi.object({
 server.post("/sign-up", async (req, res) => {
 
     const user = req.body;
-
     try {
         const emailIsAllreadyInUse = await users.findOne({ email: user.email });
 
@@ -51,12 +51,12 @@ server.post("/sign-up", async (req, res) => {
 
         const passwordHash = bcrypt.hashSync(user.password, 10);
 
-        await info.insertOne({ ...user, password: passwordHash });
+        await users.insertOne({ ...user, password: passwordHash });
 
         res.sendStatus(201);
 
     } catch (error) {
-        res.status(500).send(error);
+        res.status(500).send(error.message);
     }
 });
 
@@ -69,7 +69,7 @@ server.post("/sign-in", async (req, res) => {
         const userHasAnAccount = await users.findOne({ email });
 
         if (!userHasAnAccount) {
-            return res.sendStatus(401);
+            return res.status(401).send({message: "Usuário não existe"});
         }
 
         const validPassword = bcrypt.compareSync(password, userHasAnAccount.password);
@@ -89,7 +89,23 @@ server.post("/sign-in", async (req, res) => {
         res.send({ token });
 
     } catch (error) {
-        res.status(500).send(error);
+        res.status(500).send(error.message);
+    }
+});
+
+server.post("/sign-out", async (req, res) => {
+    const { authorization } = req.headers;
+
+    const token = authorization?.replace("Bearer ", "");
+    if (!token) {
+        return res.sendStatus(401);
+    }
+    try {
+        await session.deleteOne({ token });
+        res.sendStatus(200);
+
+    } catch (error) {
+        res.status(500).send(error.message);
     }
 });
 
