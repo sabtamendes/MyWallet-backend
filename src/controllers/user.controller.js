@@ -66,7 +66,7 @@ export async function postSignIn(req, res) {
 
         await connection.insertOne({ token, userId: userHasAnAccount._id });
 
-        res.status(201).send({name:userHasAnAccount.name, token});
+        res.status(201).send({ name: userHasAnAccount.name, token });
 
     } catch (error) {
         res.status(500).send(error.message);
@@ -74,7 +74,7 @@ export async function postSignIn(req, res) {
 }
 export async function getTransactions(req, res) {
     const { authorization } = req.headers;
-
+  
     const token = authorization?.replace("Bearer ", "");
 
     if (!token) {
@@ -95,7 +95,7 @@ export async function getTransactions(req, res) {
 
         const allTransactions = await transactions.find({}).toArray();
 
-        res.send({ user, allTransactions });
+        res.send({ user, transactions:allTransactions });
 
     } catch (error) {
         res.status(500).send(error.message);
@@ -104,7 +104,6 @@ export async function getTransactions(req, res) {
 export async function postTransactions(req, res) {
     const { authorization } = req.headers;
     const { value, description, type } = req.body;
-    const { connection } = res.locals;
     const token = authorization?.replace("Bearer ", "");
 
     if (!token) {
@@ -120,14 +119,14 @@ export async function postTransactions(req, res) {
     }
 
     try {
-        const result = await transactions.findOne({ token });
+        const result = await connection.findOne({ token });
 
         if (!result) {
             return res.sendStatus(401);
         }
 
         await transactions.insertOne({
-            userId: connection.userId,
+            userId: result.userId,
             value, description, type, date: dayjs().format('DD-MM')
         });
 
