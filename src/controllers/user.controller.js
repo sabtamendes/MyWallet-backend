@@ -1,7 +1,8 @@
-import { signUpSchema, signInSchema } from "../index.js"
+import { signUpSchema, signInSchema, transactionsSchema } from "../index.js"
 import { users, connection, transactions } from "../index.js";
 import { v4 as uuidV4 } from "uuid";
 import bcrypt from "bcrypt";
+import dayjs from "dayjs";
 
 export async function postSignUp(req, res) {
     const user = req.body;
@@ -32,7 +33,7 @@ export async function postSignUp(req, res) {
         res.status(500).send(error.message);
     }
 }
-export async function postSignIn (req, res) {
+export async function postSignIn(req, res) {
     const { email, password } = req.body;
 
     const token = uuidV4();
@@ -57,7 +58,7 @@ export async function postSignIn (req, res) {
             return res.sendStatus(401);
         }
 
-        const isInAsession = await connection.findOne({ userId: userHasAnAccount._id });
+        const isInAsession = await connection.findOne({ userId: token });
 
         if (isInAsession) {
             return res.status(401).send({ message: "Sua conta já está logada, tente novamente!" });
@@ -65,13 +66,13 @@ export async function postSignIn (req, res) {
 
         await connection.insertOne({ token, userId: userHasAnAccount._id });
 
-        res.send({ token });
+        res.status(201).send({name:userHasAnAccount.name, token});
 
     } catch (error) {
         res.status(500).send(error.message);
     }
 }
-export async function getTRansactions (req, res) {
+export async function getTransactions(req, res) {
     const { authorization } = req.headers;
 
     const token = authorization?.replace("Bearer ", "");
@@ -90,6 +91,7 @@ export async function getTRansactions (req, res) {
         }
 
         delete user.password;
+        delete user.confirmPassword;
 
         const allTransactions = await transactions.find({}).toArray();
 
@@ -99,8 +101,43 @@ export async function getTRansactions (req, res) {
         res.status(500).send(error.message);
     }
 }
+export async function postTransactions(req, res) {
+    const { authorization } = req.headers;
+    const { value, description, type } = req.body;
+    const { connection } = res.locals;
+    const token = authorization?.replace("Bearer ", "");
 
-export async function postSignOut (req, res) {
+    if (!token) {
+        return res.status(401);
+    }
+    const addTransactions = { value, description, type };
+
+    const { error } = transactionsSchema.validate(addTransactions, { abortEarly: false });
+
+    if (error) {
+        const errors = error.details.map((detail) => detail.message);
+        return res.status(401).send(errors);
+    }
+
+    try {
+        const result = await transactions.findOne({ token });
+
+        if (!result) {
+            return res.sendStatus(401);
+        }
+
+        await transactions.insertOne({
+            userId: connection.userId,
+            value, description, type, date: dayjs().format('DD-MM')
+        });
+
+        res.sendStatus(201);
+
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
+}
+export async function postSignOut(req, res) {
     const { authorization } = req.headers;
 
     const token = authorization?.replace("Bearer ", "");

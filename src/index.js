@@ -5,10 +5,11 @@ import dotenv from "dotenv";
 import joi from "joi";
 
 import { 
-    getTRansactions, 
+    getTransactions, 
     postSignIn, 
     postSignUp, 
-    postSignOut 
+    postSignOut, 
+    postTransactions
 } from "./controllers/user.controller.js";
 
 const server = express();
@@ -42,13 +43,22 @@ export const signInSchema = joi.object({
     password: joi.string().min(6).required()
 });
 
+export const transactionsSchema = joi.object({
+    value: joi.number().required(),
+    description: joi.string().required(),
+    type: joi.string().valid("debit", "credit").required(),
+    date: joi.string()
+});
+
 server.post("/sign-up", postSignUp);
 
 server.post("/sign-in", postSignIn);
 
 server.post("/sign-out", postSignOut);
 
-server.get("/transactions", getTRansactions);
+server.get("/transactions", getTransactions);
+
+server.post("/transactions", postTransactions);
 
 server.listen(process.env.PORT, () => {
     console.log("Listening on port " + process.env.PORT);
