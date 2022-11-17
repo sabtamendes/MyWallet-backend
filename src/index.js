@@ -15,22 +15,27 @@ server.use(express.json());
 const mongo = new MongoClient(process.env.MONGO_URI);
 let db;
 let users;
-let session;
-let data;
+let connection;
+let transactions;
 mongo.connect().then(() => {
     db = mongo.db("mywallet");
     users = db.collection("users");
-    session = db.collection("session");
-    data = db.collection("data");
+    connection = db.collection("connection");
+    transactions = db.collection("transactions");
 });
 
 
-const usersSchema = joi.object({
+const signUpSchema = joi.object({
     name: joi.string().min(3).required(),
     email: joi.string().email().required(),
-    password: joi.string().min(5).required()
+    password: joi.string().min(6).required(),
+    confirmPassword: joi.string().min(6).required()
 });
 
+const signInSchema = joi.object({
+    email: joi.string().email().required(),
+    password: joi.string().min(6).required()
+})
 
 server.post("/sign-up", async (req, res) => {
 
@@ -42,7 +47,7 @@ server.post("/sign-up", async (req, res) => {
             return res.status(409).send({ message: "Email já está em uso!" });
         }
 
-        const { error } = usersSchema.validate(user, { abortEarly: false });
+        const { error } = signUpSchema.validate(user, { abortEarly: false });
 
         if (error) {
             const errors = error.details.map((detail) => detail.message);
@@ -50,8 +55,8 @@ server.post("/sign-up", async (req, res) => {
         }
 
         const passwordHash = bcrypt.hashSync(user.password, 10);
-
-        await users.insertOne({ ...user, password: passwordHash });
+        const confirmPasswordHash = bcrypt.hashSync(user.confirmPassword, 10);
+        await users.insertOne({ ...user, password: passwordHash, confirmPassword: confirmPasswordHash });
 
         res.sendStatus(201);
 
@@ -64,6 +69,13 @@ server.post("/sign-in", async (req, res) => {
     const { email, password } = req.body;
 
     const token = uuidV4();
+
+    const { error } = signInSchema.validate({ email, password });
+
+    if (error) {
+        const errors = error.details.map((detail) => detail.message);
+        return res.status(401).send(errors);
+    }
 
     try {
         const userHasAnAccount = await users.findOne({ email });
@@ -78,13 +90,13 @@ server.post("/sign-in", async (req, res) => {
             return res.sendStatus(401);
         }
 
-        const isInAsession = await session.findOne({ userId: userHasAnAccount._id });
+        const isInAsession = await connection.findOne({ userId: userHasAnAccount._id });
 
         if (isInAsession) {
             return res.status(401).send({ message: "Sua conta já está logada, tente novamente!" });
         }
 
-        await session.insertOne({ token, userId: userHasAnAccount._id });
+        await connection.insertOne({ token, userId: userHasAnAccount._id });
 
         res.send({ token });
 
@@ -108,28 +120,31 @@ server.post("/sign-out", async (req, res) => {
         res.status(500).send(error.message);
     }
 });
-server.get("/data", async (req, res) => {
-    const transactions = [
-        { value: 100, description: "dinheiro da passage" }
-    ]
+
+server.get("/transactions", async (req, res) => {
     const { authorization } = req.headers;
 
     const token = authorization?.replace("Bearer ", "");
+
     if (!token) {
         return res.sendStatus(401);
     }
 
     try {
-        const userSession = await session.findOne({ token });
-        const userConection = await users.findOne({ _id: userSession?.userId });
-        if (!userConection) {
+        const userConnection = await connection.findOne({ token });
+
+        const user = await users.findOne({ _id: userConnection?.userId });
+
+        if (!user) {
             return res.sendStatus(401);
-
         }
-        delete userConection.password;
 
+        delete user.password;
 
-        res.send({ userConection, transactions })
+        const allTransactions = await transactions.find({}).toArray();
+
+        res.send({ user, allTransactions });
+
     } catch (error) {
         res.status(500).send(error.message);
     }
