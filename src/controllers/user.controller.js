@@ -101,17 +101,24 @@ export async function getTransactions(req, res) {
         res.status(500).send(error.message);
     }
 }
-export async function postTransactions(req, res) {
+export async function postCreditTransactions(req, res) {
     const { authorization } = req.headers;
     const { value, description, type } = req.body;
+    console.log(req.headers)
     const token = authorization?.replace("Bearer ", "");
-
+    console.log(authorization)
     if (!token) {
-        return res.status(401);
+        return res.sendStatus(401);
     }
-    const addTransactions = { value, description, type };
+   
+    const addNewTransactions = { 
+        value,
+        description, 
+        type,
+        date: dayjs().format("DD/MM")
+     };
 
-    const { error } = transactionsSchema.validate(addTransactions, { abortEarly: false });
+    const { error } = transactionsSchema.validate(addNewTransactions, { abortEarly: false });
 
     if (error) {
         const errors = error.details.map((detail) => detail.message);
@@ -125,16 +132,17 @@ export async function postTransactions(req, res) {
             return res.sendStatus(401);
         }
 
-        await transactions.insertOne({
-            userId: result.userId,
-            value, description, type, date: dayjs().format('DD-MM')
-        });
+        await transactions.insertOne(addNewTransactions);
 
         res.sendStatus(201);
 
     } catch (error) {
+        console.error(error)
         res.status(500).send(error.message);
     }
+}
+export async function postDebitTransactions(req, res){
+    
 }
 export async function postSignOut(req, res) {
     const { authorization } = req.headers;

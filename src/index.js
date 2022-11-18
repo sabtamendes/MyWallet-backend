@@ -9,7 +9,8 @@ import {
     postSignIn, 
     postSignUp, 
     postSignOut, 
-    postTransactions
+    postCreditTransactions,
+    postDebitTransactions
 } from "./controllers/user.controller.js";
 
 const server = express();
@@ -58,7 +59,9 @@ server.post("/sign-out", postSignOut);
 
 server.get("/transactions", getTransactions);
 
-server.post("/transactions", postTransactions);
+server.post("/credit", postCreditTransactions);
+
+server.post("/debit", postDebitTransactions);
 
 server.listen(process.env.PORT, () => {
     console.log("Listening on port " + process.env.PORT);
