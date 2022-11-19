@@ -63,6 +63,7 @@ server.post("/credit", postCreditTransactions);
 
 server.post("/debit", postDebitTransactions);
 
-server.listen(process.env.PORT, () => {
-    console.log("Listening on port " + process.env.PORT);
+const port = process.env.PORT || 5000
+server.listen(port, () => {
+    console.log("Listening on port " + port);
 });
