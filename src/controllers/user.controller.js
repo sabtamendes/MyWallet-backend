@@ -104,9 +104,8 @@ export async function getTransactions(req, res) {
 export async function postCreditTransactions(req, res) {
     const { authorization } = req.headers;
     const { value, description, type } = req.body;
-    console.log(req.headers)
     const token = authorization?.replace("Bearer ", "");
-    console.log(authorization)
+
     if (!token) {
         return res.sendStatus(401);
     }
@@ -142,8 +141,44 @@ export async function postCreditTransactions(req, res) {
     }
 }
 export async function postDebitTransactions(req, res){
-    
-}
+    const { authorization } = req.headers;
+    const { value, description, type } = req.body;
+    const token = authorization?.replace("Bearer ", "");
+
+    if (!token) {
+        return res.sendStatus(401);
+    }
+   
+    const addNewTransactions = { 
+        value,
+        description, 
+        type,
+        date: dayjs().format("DD/MM")
+     };
+
+    const { error } = transactionsSchema.validate(addNewTransactions, { abortEarly: false });
+
+    if (error) {
+        const errors = error.details.map((detail) => detail.message);
+        return res.status(401).send(errors);
+    }
+
+    try {
+        const result = await connection.findOne({ token });
+
+        if (!result) {
+            return res.sendStatus(401);
+        }
+
+        await transactions.insertOne(addNewTransactions);
+
+        res.sendStatus(201);
+
+    } catch (error) {
+        console.error(error)
+        res.status(500).send(error.message);
+    }
+} 
 export async function postSignOut(req, res) {
     const { authorization } = req.headers;
 
