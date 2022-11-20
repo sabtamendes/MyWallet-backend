@@ -67,14 +67,14 @@ export async function postSignIn(req, res) {
         await connection.insertOne({ token, userId: userHasAnAccount._id });
 
         res.status(201).send({ name: userHasAnAccount.name, token });
-
+        console.log(token, userHasAnAccount.name)
     } catch (error) {
         res.status(500).send(error.message);
     }
 }
 export async function getTransactions(req, res) {
     const { authorization } = req.headers;
-  
+
     const token = authorization?.replace("Bearer ", "");
 
     if (!token) {
@@ -95,7 +95,7 @@ export async function getTransactions(req, res) {
 
         const allTransactions = await transactions.find({}).toArray();
 
-        res.send({ user, transactions:allTransactions });
+        res.send({ transactions: allTransactions });
 
     } catch (error) {
         res.status(500).send(error.message);
@@ -109,13 +109,13 @@ export async function postCreditTransactions(req, res) {
     if (!token) {
         return res.sendStatus(401);
     }
-   
-    const addNewTransactions = { 
+
+    const addNewTransactions = {
         value,
-        description, 
+        description,
         type,
         date: dayjs().format("DD/MM")
-     };
+    };
 
     const { error } = transactionsSchema.validate(addNewTransactions, { abortEarly: false });
 
@@ -140,7 +140,7 @@ export async function postCreditTransactions(req, res) {
         res.status(500).send(error.message);
     }
 }
-export async function postDebitTransactions(req, res){
+export async function postDebitTransactions(req, res) {
     const { authorization } = req.headers;
     const { value, description, type } = req.body;
     const token = authorization?.replace("Bearer ", "");
@@ -148,13 +148,13 @@ export async function postDebitTransactions(req, res){
     if (!token) {
         return res.sendStatus(401);
     }
-   
-    const addNewTransactions = { 
+
+    const addNewTransactions = {
         value,
-        description, 
+        description,
         type,
         date: dayjs().format("DD/MM")
-     };
+    };
 
     const { error } = transactionsSchema.validate(addNewTransactions, { abortEarly: false });
 
@@ -178,16 +178,18 @@ export async function postDebitTransactions(req, res){
         console.error(error)
         res.status(500).send(error.message);
     }
-} 
+}
 export async function postSignOut(req, res) {
     const { authorization } = req.headers;
-
+    console.log(req.headers)
     const token = authorization?.replace("Bearer ", "");
     if (!token) {
-        return res.sendStatus(401);
+        return res.sendStatus(404);
     }
     try {
-        await connection.deleteOne({ token });
+        const userId = await connection.findOne({ userId: token.userId });
+        console.log(userId)
+        await connection.deleteOne({ userId: token.userId });
         res.sendStatus(200);
 
     } catch (error) {
