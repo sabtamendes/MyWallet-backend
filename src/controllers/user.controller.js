@@ -1,5 +1,6 @@
-import { signUpSchema, signInSchema, transactionsSchema } from "../index.js"
-import { users, connection, transactions } from "../index.js";
+import { signUpSchema, signInSchema } from "../schemas/userSchema.js";
+import { transactionsSchema} from "../schemas/transactionSchema.js";
+import { users, connection, transactions } from "../database/db.js";
 import { v4 as uuidV4 } from "uuid";
 import bcrypt from "bcrypt";
 import dayjs from "dayjs";
@@ -63,11 +64,13 @@ export async function postSignIn(req, res) {
         if (isInAsession) {
             return res.status(401).send({ message: "Sua conta já está logada, tente novamente!" });
         }
+        await transactions.updateOne({ token: token }, { $set: { userId: userHasAnAccount._id } });
+
 
         await connection.insertOne({ token, userId: userHasAnAccount._id });
 
         res.status(201).send({ name: userHasAnAccount.name, token });
-        console.log(token, userHasAnAccount.name)
+
     } catch (error) {
         res.status(500).send(error.message);
     }
@@ -84,7 +87,11 @@ export async function getTransactions(req, res) {
     try {
         const userConnection = await connection.findOne({ token });
 
-        const user = await users.findOne({ _id: userConnection?.userId });
+
+        console.log("userConnection", userConnection)
+
+
+        const user = await connection.findOne({ userId: userConnection?.userId });
 
         if (!user) {
             return res.sendStatus(401);
@@ -93,8 +100,11 @@ export async function getTransactions(req, res) {
         delete user.password;
         delete user.confirmPassword;
 
-        const allTransactions = await transactions.find({}).toArray();
+        const allTransactions = await transactions.findOne({userId: userConnection?.userId});
 
+        console.log("DANDO CONSOLEEEE", user, allTransactions);
+
+  
         res.send({ transactions: allTransactions });
 
     } catch (error) {
@@ -103,21 +113,14 @@ export async function getTransactions(req, res) {
 }
 export async function postCreditTransactions(req, res) {
     const { authorization } = req.headers;
-    const { value, description, type } = req.body;
+    const data = req.body;
     const token = authorization?.replace("Bearer ", "");
 
     if (!token) {
         return res.sendStatus(401);
     }
-
-    const addNewTransactions = {
-        value,
-        description,
-        type,
-        date: dayjs().format("DD/MM")
-    };
-
-    const { error } = transactionsSchema.validate(addNewTransactions, { abortEarly: false });
+    
+    const { error } = transactionsSchema.validate(data, { abortEarly: false });
 
     if (error) {
         const errors = error.details.map((detail) => detail.message);
@@ -126,11 +129,20 @@ export async function postCreditTransactions(req, res) {
 
     try {
         const result = await connection.findOne({ token });
-
+        console.log(result, "result")
         if (!result) {
             return res.sendStatus(401);
         }
 
+       
+       const addNewTransactions = {
+        token: token,
+        userId: result.userId,
+        value: data.value,
+        description: data.description,
+        type: data.type,
+        date: dayjs().format("DD/MM")
+    };
         await transactions.insertOne(addNewTransactions);
 
         res.sendStatus(201);
@@ -148,13 +160,13 @@ export async function postDebitTransactions(req, res) {
     if (!token) {
         return res.sendStatus(401);
     }
-
     const addNewTransactions = {
         value,
         description,
         type,
         date: dayjs().format("DD/MM")
     };
+
 
     const { error } = transactionsSchema.validate(addNewTransactions, { abortEarly: false });
 
@@ -181,15 +193,14 @@ export async function postDebitTransactions(req, res) {
 }
 export async function postSignOut(req, res) {
     const { authorization } = req.headers;
-    console.log(req.headers)
+
     const token = authorization?.replace("Bearer ", "");
+
     if (!token) {
-        return res.sendStatus(404);
+        return res.sendStatus(401);
     }
     try {
-        const userId = await connection.findOne({ userId: token.userId });
-        console.log(userId)
-        await connection.deleteOne({ userId: token.userId });
+        await connection.deleteOne({ token });
         res.sendStatus(200);
 
     } catch (error) {
