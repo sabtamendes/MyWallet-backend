@@ -31,7 +31,7 @@ export async function postSignUp(req, res) {
         res.sendStatus(201);
 
     } catch (error) {
-        res.status(500).send(error.message);
+        res.sendStatus(500);
     }
 }
 export async function postSignIn(req, res) {
@@ -72,7 +72,7 @@ export async function postSignIn(req, res) {
         res.status(201).send({ name: userHasAnAccount.name, token });
 
     } catch (error) {
-        res.status(500).send(error.message);
+        res.sendStatus(500);
     }
 }
 export async function getTransactions(req, res) {
@@ -102,7 +102,7 @@ export async function getTransactions(req, res) {
         res.send(allTransactions);
 
     } catch (error) {
-        res.status(500).send(error.message);
+        res.sendStatus(500);
     }
 }
 export async function postCreditTransactions(req, res) {
@@ -141,7 +141,7 @@ export async function postCreditTransactions(req, res) {
         res.sendStatus(201);
 
     } catch (error) {
-        res.status(500).send(error.message);
+        res.sendStatus(500);
     }
 }
 export async function postDebitTransactions(req, res) {
@@ -180,8 +180,7 @@ export async function postDebitTransactions(req, res) {
         res.sendStatus(201);
 
     } catch (error) {
-        console.error(error)
-        res.status(500).send(error.message);
+        res.sendStatus(500);
     }
 }
 export async function postSignOut(req, res) {
@@ -197,6 +196,6 @@ export async function postSignOut(req, res) {
         res.sendStatus(200);
 
     } catch (error) {
-        res.status(500).send(error.message);
+        res.sendStatus(500);
     }
 }
