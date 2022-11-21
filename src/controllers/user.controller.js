@@ -88,9 +88,6 @@ export async function getTransactions(req, res) {
         const userConnection = await connection.findOne({ token });
 
 
-        console.log("userConnection", userConnection)
-
-
         const user = await connection.findOne({ userId: userConnection?.userId });
 
         if (!user) {
@@ -100,12 +97,9 @@ export async function getTransactions(req, res) {
         delete user.password;
         delete user.confirmPassword;
 
-        const allTransactions = await transactions.findOne({userId: userConnection?.userId});
+        const allTransactions = await transactions.find({userId: userConnection?.userId}).toArray();
 
-        console.log("DANDO CONSOLEEEE", user, allTransactions);
-
-  
-        res.send({ transactions: allTransactions });
+        res.send(allTransactions);
 
     } catch (error) {
         res.status(500).send(error.message);
@@ -129,12 +123,11 @@ export async function postCreditTransactions(req, res) {
 
     try {
         const result = await connection.findOne({ token });
-        console.log(result, "result")
+   
         if (!result) {
             return res.sendStatus(401);
         }
 
-       
        const addNewTransactions = {
         token: token,
         userId: result.userId,
@@ -148,27 +141,19 @@ export async function postCreditTransactions(req, res) {
         res.sendStatus(201);
 
     } catch (error) {
-        console.error(error)
         res.status(500).send(error.message);
     }
 }
 export async function postDebitTransactions(req, res) {
     const { authorization } = req.headers;
-    const { value, description, type } = req.body;
+    const data = req.body;
     const token = authorization?.replace("Bearer ", "");
 
     if (!token) {
         return res.sendStatus(401);
     }
-    const addNewTransactions = {
-        value,
-        description,
-        type,
-        date: dayjs().format("DD/MM")
-    };
-
-
-    const { error } = transactionsSchema.validate(addNewTransactions, { abortEarly: false });
+    
+    const { error } = transactionsSchema.validate(data, { abortEarly: false });
 
     if (error) {
         const errors = error.details.map((detail) => detail.message);
@@ -177,11 +162,19 @@ export async function postDebitTransactions(req, res) {
 
     try {
         const result = await connection.findOne({ token });
-
+   
         if (!result) {
             return res.sendStatus(401);
         }
 
+       const addNewTransactions = {
+        token: token,
+        userId: result.userId,
+        value: data.value,
+        description: data.description,
+        type: data.type,
+        date: dayjs().format("DD/MM")
+    };
         await transactions.insertOne(addNewTransactions);
 
         res.sendStatus(201);
