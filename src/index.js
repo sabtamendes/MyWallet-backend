@@ -5,7 +5,7 @@ import {
     getTransactions, 
     postSignIn, 
     postSignUp, 
-    postSignOut, 
+    deleteSignOut, 
     postCreditTransactions,
     postDebitTransactions
 } from "./controllers/user.controller.js";
@@ -19,7 +19,7 @@ server.post("/sign-up", postSignUp);
 
 server.post("/sign-in", postSignIn);
 
-server.post("/sign-out", postSignOut);
+server.delete("/sign-out", deleteSignOut);
 
 server.get("/transactions", getTransactions);
 

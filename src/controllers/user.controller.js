@@ -1,5 +1,5 @@
 import { signUpSchema, signInSchema } from "../schemas/userSchema.js";
-import { transactionsSchema} from "../schemas/transactionSchema.js";
+import { transactionsSchema } from "../schemas/transactionSchema.js";
 import { users, connection, transactions } from "../database/db.js";
 import { v4 as uuidV4 } from "uuid";
 import bcrypt from "bcrypt";
@@ -75,6 +75,32 @@ export async function postSignIn(req, res) {
         res.sendStatus(500);
     }
 }
+export async function deleteSignOut(req, res) {
+    const { authorization } = req.headers;
+console.log(req.headers)
+    const token = authorization?.replace("Bearer ", "");
+
+    if (!token) {
+        return res.sendStatus(401);
+    }
+
+    try {
+        const userConnection = await connection.findOne({ token });
+
+
+        const user = await connection.findOne({ userId: userConnection?.userId });
+
+        if (!user) {
+            return res.sendStatus(401);
+        }
+
+        await connection.deleteOne({ token: userConnection.token, userId: userConnection._id });
+
+        res.sendStatus(200);
+    } catch (error) {
+        console.log(error)
+    }
+}
 export async function getTransactions(req, res) {
     const { authorization } = req.headers;
 
@@ -97,7 +123,7 @@ export async function getTransactions(req, res) {
         delete user.password;
         delete user.confirmPassword;
 
-        const allTransactions = await transactions.find({userId: userConnection?.userId}).toArray();
+        const allTransactions = await transactions.find({ userId: userConnection?.userId }).toArray();
 
         res.send(allTransactions);
 
@@ -113,7 +139,7 @@ export async function postCreditTransactions(req, res) {
     if (!token) {
         return res.sendStatus(401);
     }
-    
+
     const { error } = transactionsSchema.validate(data, { abortEarly: false });
 
     if (error) {
@@ -123,19 +149,19 @@ export async function postCreditTransactions(req, res) {
 
     try {
         const result = await connection.findOne({ token });
-   
+
         if (!result) {
             return res.sendStatus(401);
         }
 
-       const addNewTransactions = {
-        token: token,
-        userId: result.userId,
-        value: data.value,
-        description: data.description,
-        type: data.type,
-        date: dayjs().format("DD/MM")
-    };
+        const addNewTransactions = {
+            token: token,
+            userId: result.userId,
+            value: data.value,
+            description: data.description,
+            type: data.type,
+            date: dayjs().format("DD/MM")
+        };
         await transactions.insertOne(addNewTransactions);
 
         res.sendStatus(201);
@@ -152,7 +178,7 @@ export async function postDebitTransactions(req, res) {
     if (!token) {
         return res.sendStatus(401);
     }
-    
+
     const { error } = transactionsSchema.validate(data, { abortEarly: false });
 
     if (error) {
@@ -162,19 +188,19 @@ export async function postDebitTransactions(req, res) {
 
     try {
         const result = await connection.findOne({ token });
-   
+
         if (!result) {
             return res.sendStatus(401);
         }
 
-       const addNewTransactions = {
-        token: token,
-        userId: result.userId,
-        value: data.value,
-        description: data.description,
-        type: data.type,
-        date: dayjs().format("DD/MM")
-    };
+        const addNewTransactions = {
+            token: token,
+            userId: result.userId,
+            value: data.value,
+            description: data.description,
+            type: data.type,
+            date: dayjs().format("DD/MM")
+        };
         await transactions.insertOne(addNewTransactions);
 
         res.sendStatus(201);
