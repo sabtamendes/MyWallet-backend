@@ -77,7 +77,7 @@ export async function postSignIn(req, res) {
 }
 export async function deleteSignOut(req, res) {
     const { authorization } = req.headers;
-console.log(req.headers)
+
     const token = authorization?.replace("Bearer ", "");
 
     if (!token) {
@@ -87,14 +87,13 @@ console.log(req.headers)
     try {
         const userConnection = await connection.findOne({ token });
 
-
         const user = await connection.findOne({ userId: userConnection?.userId });
 
         if (!user) {
             return res.sendStatus(401);
         }
 
-        await connection.deleteOne({ token: userConnection.token, userId: userConnection._id });
+        await connection.deleteOne({ token: userConnection.token, userId: userConnection.userId, _id: userConnection._id});
 
         res.sendStatus(200);
     } catch (error) {
