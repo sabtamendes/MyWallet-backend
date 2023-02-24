@@ -3,7 +3,7 @@
 <details>
 <summary>Documentação do Projeto</summary>
 
-Este é um projeto em Javascript, Express e MongoDb
+Este é um projeto em Node, Express e MongoDb
 </details>
 <details>
 <summary>Instalação</summary>
@@ -29,6 +29,8 @@ Para rodar o projeto em um servidor de desenvolvimento, execute o seguinte coman
 
 ```
 npm start
+
+npm run dev
 ```
 Isso irá iniciar um servidor de desenvolvimento em localhost:3000, onde você pode visualizar a aplicação em seu navegador.
 </details>
@@ -36,7 +38,7 @@ Isso irá iniciar um servidor de desenvolvimento em localhost:3000, onde você p
 <summary>Tecnologias Utilizadas</summary>
 
   ```
-  Javascript
+  Node
   
   Express
   
@@ -60,7 +62,6 @@ Isso irá iniciar um servidor de desenvolvimento em localhost:3000, onde você p
 
 A estrutura do projeto é organizada da seguinte maneira:
 
-- `public/`: contém o arquivo HTML principal e outros arquivos estáticos como imagens e ícones.
 - `src/`: contém o código-fonte da aplicação.
   - `controllers/`
   - `database/`
