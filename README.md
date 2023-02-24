@@ -37,8 +37,21 @@ Isso irá iniciar um servidor de desenvolvimento em localhost:3000, onde você p
 
   ```
   Javascript
+  
   Express
+  
   MongoDb
+  
+  Bcrypt
+ 
+  Dayjs
+  
+  Dotenv
+  
+  Joi
+  
+  uuid
+  
   ```
 
 </details>
