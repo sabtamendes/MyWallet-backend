@@ -1,4 +1,4 @@
-##My Wallet
+## My Wallet :money_with_wings:
 
 <details>
 <summary>Documentação do Projeto</summary>
