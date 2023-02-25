@@ -2,7 +2,7 @@
 
 ### 📄👀 Documentação do Projeto
 
-Esta é a implementação Back-end (API) do MyWallet, uma aplicação mobile que simula um gerenciador de gastos, onde pode ser inserido os ganhos e gastos do usuário.
+Esta é a implementação Back-end (API) do My Wallet, uma aplicação mobile que simula um gerenciador de gastos, onde pode ser inserido os ganhos e gastos do usuário.
 
 <details>
   <summary><strong>Instalação</strong></summary>
