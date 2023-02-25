@@ -86,7 +86,8 @@ Links úteis:
   <summary><strong>API - Endpoints</strong></summary>
 
    ### 📋 Segue abaixo o resumo dos endpoints do projeto MyWallet:
-
+   - `POST /sign-in`: Acesso do usuário à conta.
+   - `POST /sign-up`: Cadastro do usuário ao aplicativo.
    - `POST /debit`: Cria uma nova transação de débito na conta do usuário.
    - `POST /credit`: Cria uma nova transação de crédito na conta do usuário.
    - `GET /transactions`: Retorna todas as transações realizadas pelo usuário.
