@@ -37,7 +37,7 @@ npm start
 
 npm run dev
 ```
-Isso irá iniciar um servidor de desenvolvimento em **localhost:3000**, onde você pode visualizar a aplicação em seu navegador.
+
 </details>
 
 
